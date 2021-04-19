@@ -2,6 +2,7 @@
 
 # Total population for each of Lagos State's 20 Local Government Areas
 import numpy as np
+import pandas as pd
 import geopandas as gpd
 import cartopy.crs as ccrs
 from cartopy.feature import ShapelyFeature
@@ -42,13 +43,24 @@ with rio.open('data_files/01_input/02_raster/hrsl_nga_pop.tif') as dataset:
     
     # 3. CALCULATING ZONAL STATS
     
-    def getNameSum():
-        municipal_pop_sum = zonal_stats(municipal_filter, pop_array, affine=affine, nodata=nodata, stats=['sum'], geojson_out=True)
-        for lga_data in municipal_pop_sum:
-            lga_name = lga_data['properties']['ADM2_EN']
-            lga_sum = lga_data['properties']['sum']
-            print(lga_name, ' est. pop. of ', int(lga_sum))
+    mun_sums = []
 
+    def getNamesStats():
+        stat_list = zonal_stats(municipal_filter, pop_array, affine=affine, nodata=nodata, stats=['sum'], geojson_out=True)
+        for feature_dict in stat_list:
+            mun_name = feature_dict['properties']['ADM2_EN']
+            mun_sum = feature_dict['properties']['sum']
+            print(mun_name, ' est. pop. of ', int(mun_sum))
+            mun_sums.append(mun_sum)
+    
+    getNamesStats()
+    
+    # Assign zonal statistics to new column in municipal_filter GeoDataFrame
+
+    municipal_filter = municipal_filter.assign(
+        Population = pd.Series(mun_sums, index = municipal_filter.index)
+    )
+    
     # 4. DISPLAY RESULTS
 
     # 4.a Define figure CRS and canvas layout (subplot 2 to present further results)
@@ -65,16 +77,5 @@ with rio.open('data_files/01_input/02_raster/hrsl_nga_pop.tif') as dataset:
 
     municipal_feat = ShapelyFeature(municipal_filter['geometry'], myCRS, facecolor='none', edgecolor='w', linewidth=1)
     ax1.add_feature(municipal_feat)
-
-    # 4.d Display results of zonal statistics
-
-    getNameSum()
-
-    
-
-
-
-
-# %%
 
 # %%
