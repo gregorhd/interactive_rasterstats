@@ -6,12 +6,10 @@ import geopandas as gpd
 import cartopy.crs as ccrs
 from cartopy.feature import ShapelyFeature
 import rasterio as rio
-from rasterio.plot import show
 from rasterstats import zonal_stats
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 
-
+# This script calculates zonal statistics for a set of polygons
 # 1. LOAD HIGH RESOLUTION SETTLEMENTS LAYER
 
 # Continuous floating point raster layer by CIESIN representing population estimates per 30m cell
@@ -20,8 +18,8 @@ import matplotlib.patches as mpatches
 with rio.open('data_files/01_input/02_raster/hrsl_nga_pop.tif') as dataset:
 
     crs = dataset.crs
-    affine = dataset.transform
-   
+    nodata = dataset.nodata
+       
     # 2. LOAD VECTOR DATA
 
     # 2.a load Nigeria Local Government Area boundaries (Level 2), and select only those LGAS within Lagos State
@@ -32,23 +30,24 @@ with rio.open('data_files/01_input/02_raster/hrsl_nga_pop.tif') as dataset:
     municipal_filter = municipal_all[municipal_all['ADM1_EN'] == 'Lagos']
 
     # 2.b Define the study area
-    xmin, ymin, xmax, ymax = municipal_filter.total_bounds
+    
+    bbox = municipal_filter.total_bounds
+    window = dataset.window(*bbox)
 
     # 2.c Create nd array based on study area
-    # load a subset of the HRSL corresponding to the study area
+    # loading a subset of the HRSL corresponding to the study area
     
-    top, lft = dataset.index(xmin, ymax) # turns real coords for top left into pixel indices
-    bot, rgt = dataset.index(xmax, ymin) # turns real coords for bottom right into pixel indices
-
-    pop_array = dataset.read(1, window=((top, bot), (lft, rgt)))
-   
+    pop_array = dataset.read(1, window=window)
+    affine = dataset.window_transform(window)
+    
     # 3. CALCULATING ZONAL STATS
-
-    municipal_pop_sum = zonal_stats(municipal_filter, pop_array, affine=affine, nodata=0, stats=['sum'], geojson_out=False)
-
-    # 3.a Extract sums only
-
-    print(municipal_pop_sum)
+    
+    def getNameSum():
+        municipal_pop_sum = zonal_stats(municipal_filter, pop_array, affine=affine, nodata=nodata, stats=['sum'], geojson_out=True)
+        for lga_data in municipal_pop_sum:
+            lga_name = lga_data['properties']['ADM2_EN']
+            lga_sum = lga_data['properties']['sum']
+            print(lga_name, ' est. pop. of ', int(lga_sum))
 
     # 4. DISPLAY RESULTS
 
@@ -66,6 +65,10 @@ with rio.open('data_files/01_input/02_raster/hrsl_nga_pop.tif') as dataset:
 
     municipal_feat = ShapelyFeature(municipal_filter['geometry'], myCRS, facecolor='none', edgecolor='w', linewidth=1)
     ax1.add_feature(municipal_feat)
+
+    # 4.d Display results of zonal statistics
+
+    getNameSum()
 
     
 
