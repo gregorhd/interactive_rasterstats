@@ -7,9 +7,9 @@ Required source files
 
 The script requires three source files:
     (1) a vector source indicating the administrative boundaries for both a first sub-national government tier (e.g. the state level) and a second tier (e.g. the municipal level):
-        - the template below uses the administrative boundaries for Nigeria available here: https://data.humdata.org/dataset/nga-administrative-boundaries#;;
+        - this sample script uses the administrative boundaries for Nigeria available here: https://data.humdata.org/dataset/nga-administrative-boundaries#;;
     (2) a vector source representing service areas including an attribute field or column indicating the total amount of solid waste collected per week by each contractor/service provider in metric tonnes ('total_coll'):
-        - the template below uses dummy polygons and collection totals assuming a 21% collection rate, the shapefiles are available in the data_files folder of the GitHub repo;        
+        - the template below uses dummy polygons and collection totals assuming a 21% collection rate, the shapefiles are available in the data_files folder of the GitHub repo;        A
     (3) the pop GeoTIFF of a CIESIN High-Resolution Settlements Layer providing the number of persons estimated to live in each roughly 30x30m pixel (see 
         - the template below uses the HRSL for Nigeria available at https://ciesin.columbia.edu/data/hrsl/#data ;
 
@@ -20,20 +20,6 @@ The script will return three outputs:
     (2) a list of service providers by amount of uncollected solid waste per week in metric tonnes, in descending order;
     (3) choropleth maps visualizing each list using a scalar colormap (blues for (1) and reds for (2)).
 
-Customizations
-
-    - By changing the "stat_select" variable, other statistics supported by rasterstats (such as min, max, mean etc.) can also be generated.
-    - By changing the "state_select" variable, the script will return the same outputs for municipalities in a different state (remember to also provide a source for the service areas, however)
-    - By changing the 'sw_ppd' variable, different scenarios can be run with a different amount of solid waste generated per capita per day  
-
-This script requires that `pandas` be installed within the Python
-environment you are running this script in.
-
-This file can also be imported as a module and contains the following
-functions:
-
-    * get_spreadsheet_cols - returns the column headers of the file
-    * main - the main function of the script
 """
 import numpy as np
 import pandas as pd
@@ -87,15 +73,54 @@ def getPixelCount(vector, array, provider_field):
         provider_names.append(provider_name)
         provider_counts.append(provider_count)
 
+# USER INPUT
+# Adjust these variables as required
+
+# indicate the filepath to the administrative boundaries data source
+fp_adm = 'data_files/01_input/01_vector/nga_admbnda_adm2_osgof_20190417.shp'
+
+# indicate the name of the column indicating the names of the superordinate (e.g. state-level) jurisdictions
+# If this information is in a data source separate from the subordinate tier,
+# a spatial join via GeoPandas or a desktop GIS may be necessary
+state_name_field = 'ADM1_EN'
+
+# select which superordinate unit (e.g. state) you want to perform the analysis on
+state_select = 'Lagos'
+
+# indicate the name of the column containing the names of municipalities
+mun_name_field = 'ADM2_EN'
+
+# indicating the filepath to the service areas data source
+fp_service_areas = 'data_files/01_input/01_vector/service_areas.shp'
+
+# indicating the name of the column containing the names of service providers;
+provider_name_field = 'psp_name'
+
+# indicate the name of the column containing the weekly collection totals reported
+provider_coll_field = 'total_coll'
+
+# indicate the filepath to the raster data source;
+fp_raster = 'data_files/01_input/02_raster/hrsl_nga_pop.tif'
+
+# indicate the amount of solid waste generated per capita per day in kilograms, according to your particular context (the map annotation will be adjusted automatically)
+sw_ppd = 0.79
+
+# OPTIONAL CUSTOMIZATIONS
+
+# the rasterstats zonal statistic to be computed for each jurisdiction (default is 'sum')
+stat_select = 'sum' 
+
+# If adjusting 'stat_select' also adjust the title of the choropleth maps accordingly
+var_name = 'Tonnes of solid waste generated per week' 
+    
 # 1. LOAD HIGH RESOLUTION SETTLEMENTS LAYER
 
 # Continuous floating point raster layer by CIESIN representing number of persons per 30x30m grid cell
 # Sample: Nigeria
 
-fp_raster = 'data_files/01_input/02_raster/hrsl_nga_pop.tif'
-
 with rio.open(fp_raster) as dataset:
 
+    # read CRS and not data attributes
     crs = dataset.crs
     nodata = dataset.nodata
        
@@ -103,12 +128,7 @@ with rio.open(fp_raster) as dataset:
 
     # load Nigeria Local Government Area boundaries (Level 2, 'ADM2_EN'), and select only those LGAS within the larger Lagos State administrative boundary (Level 1, 'ADM1_EN')
 
-    fp_adm = 'data_files/01_input/01_vector/nga_admbnda_adm2_osgof_20190417.shp'
-
     municipal_all = gpd.read_file(fp_adm).to_crs(crs)
-
-    state_name_field = 'ADM1_EN'
-    state_select = 'Lagos'
 
     municipal_filter = municipal_all[municipal_all[state_name_field] == state_select]
 
@@ -117,12 +137,7 @@ with rio.open(fp_raster) as dataset:
     bbox = municipal_filter.total_bounds
     window = dataset.window(*bbox)
 
-    # coords for centering free text to be plotted later
-    minx, miny, maxx, maxy = municipal_filter.total_bounds
-
     # LOAD VECTOR DATA FOR SERVICE AREAS OF SOLID WASTE SERVICE PROVIDERS
-
-    fp_service_areas = 'data_files/01_input/01_vector/service_areas.shp'
     
     # service_areas = gpd.read_file(fp_service_areas).to_crs(crs)
     service_areas = gpd.read_file(fp_service_areas).to_crs(crs)
@@ -136,8 +151,6 @@ with rio.open(fp_raster) as dataset:
     
     # Calculate tons of solid waste produced per grid cell rson per week
 
-    sw_ppd = 0.79 # solid waste per capita per day in kilograms
-
     sw_ppd_array = pop_array * sw_ppd # converts population to solid waste per person and day
 
     sw_ppw_array = sw_ppd_array * 7 # converts daily to weekly figures
@@ -145,44 +158,30 @@ with rio.open(fp_raster) as dataset:
     array = sw_ppw_array / 1000 # converts kilograms to tons per week (TPW)
     
     # CALCULATE ZONAL STATS - BASELINE GENERATION PER MUNICIPALITY
+     
+    # empty lists of all polygon names and zonal stats to be populated by function
     
-    # Label and select statistic, identify column containing polygon names
-    var_name = 'Tonnes of solid waste generated per week' # variable name displayed as part of the figure title
-    stat_select = 'sum' # the rasterstats zonal statistic to be computed for each jurisdiction
-    mun_name_field = 'ADM2_EN' # name of the GeoDataFrame field containing the names of jurisdictions
     mun_names = []
     mun_stats = []
-
-    
-    # empty lists of all polygon names and zonal stats to be populated by function
-   
     getNamesStats(municipal_filter, array, mun_name_field, mun_names, mun_stats)
 
     # CALCULATE ZONAL STATS - SOLID WASTE COLLECTED PER SERVICE AREA
 
-    provider_name_field = 'psp_name'
-    provider_coll_field = 'total_coll'
-
     provider_names = []
     provider_stats = []
-    
-    provider_counts = []
-   
-    provider_coll = service_areas[provider_coll_field].values.tolist()
-    
-    getPixelCount(service_areas, array, provider_name_field)
-
     getNamesStats(service_areas, array, provider_name_field, provider_names, provider_stats)
 
-    # subtract the total waste collected from the total waste generated in each service area
-    # and add this to new column 'total_uncoll' for the weekly total tonnage of uncollected waste
+    # Count function, to be expanded on...
 
-    
-    
+    provider_counts = []
+    getPixelCount(service_areas, array, provider_name_field)
 
-    provider_uncoll = []
+    # extract total collection values and subtract  the total waste generated in each service area
+
+    provider_coll = service_areas[provider_coll_field].values.tolist()
     zip_object = zip(provider_stats, provider_coll)
 
+    provider_uncoll = []
     for i, j in zip_object:
         provider_uncoll.append(i - j)
 
@@ -205,7 +204,9 @@ with rio.open(fp_raster) as dataset:
     for i in provider_dict_sorted:
         print(i[0],':',f"{int(i[1]):,}", 'tonnes')
     
-    # Assign zonal statistics to new column 'stat_output' in municipal_filter GDF
+    # Assign zonal statistics to new columns 
+    # 'stat_output' for municipal_filter GDF and 'total_uncoll' for service_areas GDF
+    # using two different methods
 
     municipal_filter = municipal_filter.assign(
         stat_output = pd.Series(mun_stats, index = municipal_filter.index)
