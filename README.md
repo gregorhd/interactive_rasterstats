@@ -99,7 +99,7 @@ To more fluidly edit the script and see the results side-by-side in the same win
 
 Adding `# %%` to the top of the script turns the script into a [Jupyter-like code cell](https://code.visualstudio.com/docs/python/jupyter-support-py) which allows for a seamless workflow of editing and results visualization in the same window. Simply edit the script on the left and hit `Shift + Enter`to execute and display the results in the interactive interpreter on the right.
 
-#### How to run the Jupyter Notebook in our browser
+#### How to run the Jupyter Notebook in your browser
 
 Via the environment's command line, navigate to the repo folder and enter
 
