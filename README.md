@@ -13,7 +13,7 @@ Both statitistcs are presented in a rank-ordered list and as a choropleth map. A
 The script performs simple algebra on the pixel values of a raster layer representing population estimates and adds them as zonal statistics to new attribute fields for two sets of polygon features before plotting each on a map.
 Each step in the calculation is modularised as a sub-task in a sequence of functions, as pictured below.
 
-![Process diagram][process.png]
+![Process diagram](process.png)
 
 ## Installation
 
