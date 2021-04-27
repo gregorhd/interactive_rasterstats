@@ -1,12 +1,19 @@
 # Solid Waste Quick Assessment Tool
 > Quickly compute, and display on a map, the amount of solid waste generated per week per municipal jurisdiction, and the amount of uncollected solid waste per service area. Applicable to any of the around 30+ countries covered by the [HRSL](https://ciesin.columbia.edu/data/hrsl/#data) at 1 arc-second resolution (2015 data) or globally at 30 arc-second resolution through the [GPW](https://sedac.ciesin.columbia.edu/data/set/gpw-v4-population-count-rev11/data-download) raster (2000, 2005, 2010, 2015 and 2020 data).   
 
-This script will compute two statistics (both in metric tonnes): the amount of solid waste generated per week per municipal jurisdiction, and the amount of uncollected solid waste generated in each 'service area', i.e. the area of a municipal jurisdiction for which a service provider (e.g. contractor or municipal department) provides solid waste collection services. An interactive slider allows for adjusting the assumption on solid waste generated per capita per day. Both lists and maps are then updated in real-time.
+This script will compute two statistics (both in metric tonnes): the amount of solid waste generated per week per municipal jurisdiction, and the amount of uncollected solid waste generated in each 'service area', i.e. the area of a municipal jurisdiction for which a service provider (e.g. contractor or municipal department) provides solid waste collection services. 
 
-Both statitistcs are presented in a rank-ordered list and as a choropleth map. The example below shows the outputs for Lagos State in Nigeria, using dummy data for service areas.
+Both statitistcs are presented in a rank-ordered list and as a choropleth map. An interactive slider allows for adjusting the assumption on solid waste generated per capita per day. Both lists and maps are then updated in real-time. The example below shows the outputs for Lagos State in Nigeria, using dummy data for service areas.
 
 ![Screen capture of outputs 1 and 2](output1and2.png)
 ![Screen capture of output 3](output3.png)
+
+## How it works
+
+The script performs simple algebra on the pixel values of a raster layer representing population estimates and adds them as zonal statistics to new attribute fields for two sets of polygon features before plotting each on a map.
+Each step in the calculation is modularised as a sub-task in a sequence of functions, as pictured below.
+
+![Process diagram][process.png]
 
 ## Installation
 
@@ -30,7 +37,7 @@ The following dependencies are required:
 
 To ensure access to these packages and avoid [dependency hell](https://en.wikipedia.org/wiki/Dependency_hell), it is necessary to set up an _environment_, the requirements for which are contained in the `environment.yml` file in the root of this repository (or 'repo').
 
-After [forking](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo) this repo, open Navigator, click on the **Import** button at the bottom of the **Environments** tab, navigate to the `environment.yml` file in the root folder of your local repo, and click **Import**. Setting up the environment with all its packages and dependencies may take a few minutes.
+After [forking](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo) this repo or downloading the .zip, open Navigator, click on the **Import** button at the bottom of the **Environments** tab, navigate to the `environment.yml` file in the root folder of your local repo, and click **Import**. Setting up the environment with all its packages and dependencies may take a few minutes.
 
 conda install ipywidgets
 
@@ -42,10 +49,10 @@ jupyter nbextension enable --py widgetsnbextension
 
 The script requires three source files:
 
-1. a vector source indicating the administrative boundaries for a superordinate sub-national government tier (e.g. the state level) and a second subordinate tier (e.g. the municipal level):
+1. a vector source in EPSG:4326 indicating the administrative boundaries for a superordinate sub-national government tier (e.g. the state level) and a second subordinate tier (e.g. the municipal level):
  > the present sample script uses the administrative boundaries for Nigeria available at [humdata.org](https://data.humdata.org/dataset/nga-administrative-boundaries);
-2. another vector source representing service areas including an attribute field or column indicating the total amount of solid waste collected per week by each contractor/service provider in metric tonnes:
- > the present sample script uses dummy polygons and hypothetical collection totals for Lagos State assuming a 21% collection rate. Sample shapefiles for Lagos and Ogun State are available in the `data_files` folder of the GitHub repo;        
+2. another vector source in EPSG:4326 representing service areas including an attribute field or column indicating the total amount of solid waste collected per week by each contractor/service provider in metric tonnes:
+ > the present sample script uses dummy polygons and hypothetical collection totals for Lagos State assuming a 21% collection rate. A second shapefile containing dummy data for Ogun State is available in the `data_files` folder as well, demonstrating how the script can be quickly run on any jurisdiction;        
 3. the pop GeoTIFF of the CIESIN [High-Resolution Settlements Layer (HRSL)](https://ciesin.columbia.edu/data/hrsl/#data) providing the number of persons estimated to haved lived in each 1 arc-second pixel (roughly 30m) in 2015, available for roughly 30 countries in Africa, Asia and Latin America, **or** the [Gridded World Population](https://sedac.ciesin.columbia.edu/data/collection/gpw-v4) layer which has global coverage, covers 5 year periods from 2000 to 2020 but only has a 30 arc-second resolution (roughly 1km).
  > the present sample script uses the HRSL for Nigeria available [here](https://ciesin.columbia.edu/data/hrsl/#data).
 
@@ -61,35 +68,11 @@ The script will need to be adjusted in the `# USER INPUTS` section to specify da
 6. the `provider_name_field` variable indicating the name of the column containing the names of service providers;
 7. the `provider_coll_field` variable indicating the name of the column containing the weekly collection totals reported
 8. the `fp_raster` variable indicating the filepath to the raster data source;
-9. the `sw_ppd` min, max and step floats passed to the main() function indicating the amount of solid waste generated per capita per day in kilograms, according to your particular context (the map annotation will be adjusted automatically)
+9. the `sw_ppd` min, max and step floats passed to the `main()` function indicating the amount of solid waste generated per capita per day in kilograms, according to your particular context (the map annotation will be adjusted automatically)
 
 #### Optional customization
 
-Changing the `stat_select` variable to another statistic supported by rasterstats (such as min, max, mean etc.) is also possible, though then the array algebra and the title of the choropleth maps (via `var_name`) will need to be adjusted accordingly.  
-
-#### How to run the script from the command line
-
-Still in Navigator, head to the **Home** tab, select **'swmtool'** from the **Applications on:** drop-down menu, and click the **Launch** button underneath **'CMD.exe Prompt'** or **Install** if you do not see the Launch button.
-
-![Screen capture of Anaconda Home tab](instructions_01.png)
-
-A command prompt window will open starting with `(swmtool)` followed by your location in the starting directory, usually `C:\Users\YOURUSERNAME>`. Copy the path to your local repo to your clipboard and enter (without the square brackets)
-
-```sh
-cd [PATH]
-```
-followed by
-
-```sh
-ipython -i script.py
-```
-to have the IPython interpreter execute the script in interactive mode. This will produce outputs 1 and 2. To see the choropleth maps, enter
-
-```sh
-plt.show()
-```
-
-Edits to the script will be reflected in the IPython command prompt window.
+Changing the `stat_select` variable to another statistic supported by _rasterstats_ (such as min, max, mean etc.) is also possible, though then the array algebra and the title of the choropleth maps (via `var_name`) will need to be adjusted accordingly.  
 
 #### How to run the script from inside an IDE or text editor
 
@@ -101,12 +84,23 @@ Adding `# %%` to the top of the script turns the script into a [Jupyter-like cod
 
 #### How to run the Jupyter Notebook in your browser
 
-Via the environment's command line, navigate to the repo folder and enter
+In Navigator, head to the **Home** tab, select **'swmtool'** from the **Applications on:** drop-down menu, and click the **Launch** button underneath **'CMD.exe Prompt'** or **Install** if you do not see the Launch button.
+
+![Screen capture of Anaconda Home tab](instructions_01.png)
+
+A command prompt window will open starting with `(swmtool)` followed by your location in the starting directory, usually `C:\Users\YOURUSERNAME>`. Copy the path to your local repo to your clipboard and navigate to it in the command prompt by entering (without the square brackets)
+
+```sh
+cd [PATH]
+```
+followed by
 
 ```sh
 jupyter-notebook script.ipynb
 ```
-The notebook will open in your browser. Click inside the only cell and hit `Shift + Enter` to have the slider and results displayed below.
+The notebook will open in your browser. Click inside the only cell and hit `Shift + Enter` to run the script and have the slider and results displayed below.
+
+**Note**: The  standard interactive ipython interpreter accessed through the command prompt (`ipython -i script.py`) is not able to dynamically handle _ipywidgets_. It is therefore necessary to use one of the two options described above to run the script.
 
 #### Expected Outputs
 
@@ -139,9 +133,5 @@ The Solid Waste Quick Assessment Tool is licensed under the terms of the GNU Gen
 ## Acknowledgements
 
 * @iamdonovan for his assistance in fixing the affine argument
-
-<!-- Markdown link & img dfn's -->
-[npm-url]: https://npmjs.org/package/datadog-metrics
-[npm-downloads]: https://img.shields.io/npm/dm/datadog-metrics.svg?style=flat-square
 
 

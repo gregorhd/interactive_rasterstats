@@ -24,8 +24,6 @@ The assumption on the amount of solid waste produced per capity per day can be a
 
 """
 
-%matplotlib inline
-
 import numpy as np
 import pandas as pd
 import geopandas as gpd
@@ -36,6 +34,8 @@ from rasterstats import zonal_stats
 import matplotlib.pyplot as plt
 from ipywidgets import interact
 import ipywidgets as widgets
+
+%matplotlib inline
 
 def getVector(fp_adm, fp_service_areas, state_name_field, state_select):
     """Returns a subset of vector features and the bounding box (study area).
