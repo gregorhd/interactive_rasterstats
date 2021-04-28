@@ -3,7 +3,9 @@
 
 This script will compute two statistics (both in metric tonnes): the amount of solid waste generated per week per municipal jurisdiction, and the amount of uncollected solid waste generated in each 'service area', i.e. the area of a municipal jurisdiction for which a service provider (e.g. contractor or municipal department) provides solid waste collection services. 
 
-Both statitistcs are presented in a rank-ordered list and as a choropleth map. An interactive slider allows for adjusting the assumption on solid waste generated per capita per day. Both lists and maps are then updated in real-time. The example below shows the outputs for Lagos State in Nigeria, using dummy data for service areas.
+Both statitistcs are presented in a rank-ordered list and as a choropleth map. The example below shows the outputs for Lagos State in Nigeria, using dummy data with respect to service areas.
+
+**Results updated in real-time:** A **drop-down menu** allows for the superordinate jurisdiction (e.g. the state-level) to be selected. A **slider** allows for assumptions on the amount of solid waste generated per capita per day (in kilograms) to be adjusted interactively. Both lists and maps are then updated in real-time.
 
 ![Screen capture of outputs 1 and 2](output1and2.png)
 ![Screen capture of output 3](output3.png)
@@ -39,10 +41,6 @@ To ensure access to these packages and avoid [dependency hell](https://en.wikipe
 
 After [forking](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo) this repo or downloading the .zip, open Navigator, click on the **Import** button at the bottom of the **Environments** tab, navigate to the `environment.yml` file in the root folder of your local repo, and click **Import**. Setting up the environment with all its packages and dependencies may take a few minutes.
 
-conda install ipywidgets
-
-jupyter nbextension enable --py widgetsnbextension
-
 ## Running the script
 
 #### Required source files
@@ -52,23 +50,29 @@ The script requires three source files:
 1. a vector source in EPSG:4326 indicating the administrative boundaries for a superordinate sub-national government tier (e.g. the state level) and a second subordinate tier (e.g. the municipal level):
  > the present sample script uses the administrative boundaries for Nigeria available at [humdata.org](https://data.humdata.org/dataset/nga-administrative-boundaries);
 2. another vector source in EPSG:4326 representing service areas including an attribute field or column indicating the total amount of solid waste collected per week by each contractor/service provider in metric tonnes:
- > the present sample script uses dummy polygons and hypothetical collection totals for Lagos State assuming a 21% collection rate. A second shapefile containing dummy data for Ogun State is available in the `data_files` folder as well, demonstrating how the script can be quickly run on any jurisdiction;        
+ > the present sample script uses dummy polygons and hypothetical collection totals for Lagos State assuming a 21% collection rate. A second shapefile containing dummy data for Ogun State is available in the `data_files` folder as well. **Switch between Lagos and Ogun in the drop-down menu** to demonstrate how the script can be quickly run on any jurisdiction;       
 3. the pop GeoTIFF of the CIESIN [High-Resolution Settlements Layer (HRSL)](https://ciesin.columbia.edu/data/hrsl/#data) providing the number of persons estimated to haved lived in each 1 arc-second pixel (roughly 30m) in 2015, available for roughly 30 countries in Africa, Asia and Latin America, **or** the [Gridded World Population](https://sedac.ciesin.columbia.edu/data/collection/gpw-v4) layer which has global coverage, covers 5 year periods from 2000 to 2020 but only has a 30 arc-second resolution (roughly 1km).
  > the present sample script uses the HRSL for Nigeria available [here](https://ciesin.columbia.edu/data/hrsl/#data).
 
 #### Required script adjustments
 
-The script will need to be adjusted in the `# USER INPUTS` section to specify data sources and adjust variables according to context. These are:
+As part of the `main()` function definition, two default values need to be adjusted:
 
-1. the `fp_adm` variable indicating the filepath to the administrative boundaries data source;
-2. the `state_name_field` variable indicating the name of the column containing the names of the superordinate (e.g. state-level) jurisdictions. If this information is in a data source separate from the subordinate tier, a spatial join via GeoPandas or a desktop GIS may be necessary;
-3. the `state_select` variable to select which state you want to perform the analysis on (bear in mind that `fp_service_areas` needs to be adjusted then as well);
-4. the `mun_name_field` variable indicating the name of the column containing the names of municipalities;
-5. the `fp_service_areas` variable indicating the filepath to the service areas data source;
-6. the `provider_name_field` variable indicating the name of the column containing the names of service providers;
-7. the `provider_coll_field` variable indicating the name of the column containing the weekly collection totals reported
-8. the `fp_raster` variable indicating the filepath to the raster data source;
-9. the `sw_ppd` min, max and step floats passed to the `main()` function indicating the amount of solid waste generated per capita per day in kilograms, according to your particular context (the map annotation will be adjusted automatically)
+1. the `state_list` default value which indicates the state to be selected on-load. Setting this is useful when service area data sources are not available for all states, as in the case of the sample data. Selecting such a state, or having the first state in the list be selected automatically, will cause an `OpenFailedError`;
+2. the `sw_ppd` _min_, _max_ and _step_ floats indicating the amount of solid waste generated per capita per day in kilograms, according to your particular context (the map annotation will be adjusted automatically).
+
+Enclosing scope variables will need to be adjusted in the `USER INPUTS 1` section. These are:
+
+3. the `mun_name_field` variable indicating the name of the column containing the names of municipalities;
+4. the `fp_service_areas` variable indicating the file path to the service areas data sources - the sample data appends '_statename.shp' to 'service_areas' to construct file names;
+5. the `provider_name_field` variable indicating the name of the column containing the names of service providers;
+6. the `provider_coll_field` variable indicating the name of the column containing the weekly collection totals reported;
+7. the `fp_raster` variable indicating the filepath to the raster data source;
+
+Global scope variables will need to be adjusted in the `USER INPUTS 2` section, namely:
+
+8. the `fp_adm` variable indicating the filepath to the administrative boundaries data source;
+9. the `state_name_field` variable indicating the name of the column containing the names of the superordinate (e.g. state-level) jurisdictions. If this information is in a data source separate from the subordinate tier, a spatial join via GeoPandas or a desktop GIS may be necessary.
 
 #### Optional customization
 
@@ -100,7 +104,7 @@ jupyter-notebook script.ipynb
 ```
 The notebook will open in your browser. Click inside the only cell and hit `Shift + Enter` to run the script and have the slider and results displayed below.
 
-**Note**: The  standard interactive ipython interpreter accessed through the command prompt (`ipython -i script.py`) is not able to dynamically handle _ipywidgets_. It is therefore necessary to use one of the two options described above to run the script.
+**Note**: The  standard interactive ipython interpreter accessed through the command prompt (`ipython -i script.py`) is not able to dynamically handle _ipywidgets_. It is therefore necessary to use one of the two options described above to run the script and avail of the interactive features.
 
 #### Expected Outputs
 
@@ -108,6 +112,8 @@ The script will return three outputs:
 1. a list of municipalities by amount of solid waste generated per week in metric tonnes, in descending order;
 2. a list of service providers by amount of uncollected solid waste per week in metric tonnes, in descending order;
 3. choropleth maps visualizing each list using a scalar colormap (blues for (1) and reds for (2)).
+
+A drop-down menu will allow for selecting superordinate jurisdictions whereas a slider will allow for adjusting assumptions on the amount of solid waste generated per capita per day in kilograms.
 
 ## Release History
 

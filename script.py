@@ -20,8 +20,7 @@ The script will return three outputs:
     (2) a list of service providers by amount of uncollected solid waste per week in metric tonnes, in descending order;
     (3) choropleth maps visualizing each list using a scalar colormap (blues for (1) and reds for (2)).
 
-The assumption on the amount of solid waste produced per capity per day can be adjusted by way of an interactive slider widget. Results are then updated in real-time.
-
+A drop-down menu allows for selecting superordinate jurisdictions from a list. The assumption on the amount of solid waste produced per capity per day can be adjusted by way of an interactive slider widget. Results are then updated in real-time.
 """
 
 import numpy as np
@@ -37,7 +36,7 @@ import ipywidgets as widgets
 
 %matplotlib inline
 
-def getVector(fp_adm, fp_service_areas, state_name_field, state_select):
+def getVector(fp_adm, fp_service_areas, state_name_field, state_select='Lagos'):
     """Returns a subset of vector features and the bounding box (study area).
 
     Parameters
@@ -272,36 +271,31 @@ def processStats(service_areas, mun_names, mun_stats, provider_names, provider_s
             print(i[0],':',f"{int(i[1]):,}", 'tonnes')
 
         return mun_dict_sorted, provider_dict_sorted
-        
-def main(sw_ppd=(0.4, 1.2, 0.1)): # indicate min, max and steps for solid waste ppd variable
+
+
+def main(state_list='Lagos', sw_ppd=(0.4, 1.2, 0.1)): 
     """Executes all functions, adds zonal stats to GDFs and plots results on a subplot each.
 
-    Hard coded user inputs are declared as local scope variables here.
+    The majority of hard coded user inputs are declared as enclosing scope variables here.
 
     Parameters
     ----------
+    state_list : str or list
+        Setting the default string value in the function definition causes this state to be active on-load. This is useful when service area source files are not available for all states (selecting such a state will cause and OpenFailedError). When interact() is executed, the list of states is passed to main().
     sw_ppd : tuple
         Floats for min, max and step controlling the ipywidgets slider
     """
 
-    # USER INPUT
+    # USER INPUT 1: Enclosing Scope Variables
 
-    # indicate the filepath to the administrative boundaries data source
-    fp_adm = 'data_files/01_input/01_vector/nga_admbnda_adm2_osgof_20190417.shp'
-
-    # indicate the name of the column indicating the names of the superordinate (e.g. state-level) jurisdictions
-    # If this information is in a data source separate from the subordinate tier,
-    # a spatial join via GeoPandas or a desktop GIS may be necessary
-    state_name_field = 'ADM1_EN'
-
-    # select which superordinate unit (e.g. state) you want to perform the analysis on
-    state_select = 'Lagos'
+    # equates the element from the list passed to main() by interact() with state_select
+    state_select = state_list
 
     # indicate the name of the column containing the names of municipalities
     mun_name_field = 'ADM2_EN'
 
-    # indicating the filepath to the service areas data source
-    fp_service_areas = 'data_files/01_input/01_vector/service_areas_lagos.shp'
+    # indicating the filepath to the service areas data source(s)
+    fp_service_areas = 'data_files/01_input/01_vector/service_areas_' + state_select.lower() + '.shp'
 
     # indicating the name of the column containing the names of service providers;
     provider_name_field = 'psp_name'
@@ -402,5 +396,25 @@ def main(sw_ppd=(0.4, 1.2, 0.1)): # indicate min, max and steps for solid waste 
 
     service_areas.plot(column='total_uncoll', cmap='Reds', linewidth=0.8, ax=ax2, edgecolor='k')
 
-interact(main)
+# USER INPUTS 2: Global Scope Variables
+# this set of variables is declared globally to make state_list accessible to interact()
+
+fp_adm = 'data_files/01_input/01_vector/nga_admbnda_adm2_osgof_20190417.shp'
+
+# indicate the name of the column indicating the names of the superordinate (e.g. state-level) jurisdictions
+# If this information is in a data source separate from the subordinate tier,
+# a spatial join via GeoPandas or a desktop GIS may be necessary
+
+state_name_field = 'ADM1_EN'
+
+# variables declared to be passed to interact()
+
+municipal_all = gpd.read_file(fp_adm)
+
+state_list = sorted(municipal_all[state_name_field].unique().tolist())
+
+# EXECUTE
+
+interact(main, state_list=state_list)
 # %%
+
