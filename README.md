@@ -3,7 +3,7 @@
 
 This script will compute two statistics (both in metric tonnes): the amount of solid waste generated per week per municipal jurisdiction, and the amount of uncollected solid waste generated in each 'service area', i.e. the area of a municipal jurisdiction for which a service provider (e.g. contractor or municipal department) provides solid waste collection services. 
 
-Both statitistcs are presented in a rank-ordered list and as a choropleth map. The example below shows the outputs for Lagos State in Nigeria, using dummy data with respect to service areas.
+Both statistics are presented in a rank-ordered list and as a choropleth map. The example below shows the outputs for Lagos State in Nigeria, using dummy data with respect to service areas.
 
 **Results updated in real-time:** A **drop-down menu** allows for the superordinate jurisdiction (e.g. the state-level) to be selected. A **slider** allows for assumptions on the amount of solid waste generated per capita per day (in kilograms) to be adjusted interactively. Both lists and maps are then updated in real-time.
 
@@ -88,6 +88,8 @@ Adding `# %%` to the top of the script turns the script into a [Jupyter-like cod
 
 #### How to run the Jupyter Notebook in your browser
 
+A **Jupyter Notebook** `script.ipynb` has been provided in the root of the repo containing  the script interspersed with additional explanatory text, allowing you to run the script in stages inside your browser (or click **Cell** > **Run All**) and see the results directly. 
+
 In Navigator, head to the **Home** tab, select **'swmtool'** from the **Applications on:** drop-down menu, and click the **Launch** button underneath **'CMD.exe Prompt'** or **Install** if you do not see the Launch button.
 
 ![Screen capture of Anaconda Home tab](instructions_01.png)
@@ -102,7 +104,7 @@ followed by
 ```sh
 jupyter-notebook script.ipynb
 ```
-The notebook will open in your browser. Click inside the only cell and hit `Shift + Enter` to run the script and have the slider and results displayed below.
+The notebook will open in your browser. Scroll to the **Walkthrough** section to go through each the script in stages.
 
 **Note**: The  standard interactive ipython interpreter accessed through the command prompt (`ipython -i script.py`) is not able to dynamically handle _ipywidgets_. It is therefore necessary to use one of the two options described above to run the script and avail of the interactive features.
 

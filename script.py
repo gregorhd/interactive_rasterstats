@@ -9,7 +9,7 @@ The script requires three source files:
     (1) a vector source indicating the administrative boundaries for both a first sub-national government tier (e.g. the state level) and a second tier (e.g. the municipal level):
         - this sample script uses the administrative boundaries for Nigeria available here: https://data.humdata.org/dataset/nga-administrative-boundaries#;;
     (2) a vector source representing service areas including an attribute field or column indicating the total amount of solid waste collected per week by each contractor/service provider in metric tonnes ('total_coll'):
-        - the template below uses dummy polygons and collection totals assuming a 21% collection rate, the shapefiles are available in the data_files folder of the GitHub repo;        A
+        - the template below uses dummy polygons and collection totals assuming a 21% collection rate. A second shapefile containing dummy data for Ogun State is available in the `data_files` folder as well. Switch between Lagos and Ogun in the drop-down menu to demonstrate how the script can be quickly run on any jurisdiction;        A
     (3) the pop GeoTIFF of a CIESIN High-Resolution Settlements Layer providing the number of persons estimated to live in each 1 arc-second pixel (2015 data) or a GPW layer at 30 arc-seconds resolution (2000-2020 data) 
         - the template below uses the HRSL for Nigeria available at https://ciesin.columbia.edu/data/hrsl/#data ;
 
