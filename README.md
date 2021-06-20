@@ -98,7 +98,7 @@ This demo implementation of _rasterstats_ in combination with _ipywidgets_ is li
 
 ## How to Contribute
 
-1. Fork it (<https://github.com/gregorhuh/UU_egm722_project/fork>)
+1. Fork it (<https://github.com/gregorhuh/interactive_rasterstats/fork>)
 2. Create your feature branch (`git checkout -b feature/fooBar`)
 3. Commit your changes (`git commit -am 'Add some fooBar'`)
 4. Push to the branch (`git push origin feature/fooBar`)
